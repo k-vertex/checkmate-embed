@@ -28,7 +28,6 @@ Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 void setup() {
   Serial.begin(9600);
   while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
   }
  EthernetInit();
  nfcInit();
@@ -87,6 +86,7 @@ void loop() {
 
       if(client.connect(server, 8888)) {
         String postData = "deviceToken=" + responseToString(response, responseLength);
+        postData += "&attendance=1&embededKey=F706357390D5798F";
         client.println("POST /attend HTTP/1.1");
         client.println("Host: emperorchang.store:8888");
         client.println("Content-Type: application/x-www-form-urlencoded");
