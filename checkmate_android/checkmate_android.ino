@@ -87,7 +87,8 @@ void loop() {
       if(client.connect(server, 8888)) {
         String postData = "deviceToken=" + responseToString(response, responseLength);
         postData += "&attendance=1&embededKey=F706357390D5798F";
-        client.println("POST /attend HTTP/1.1");
+        Serial.println(postData);
+        client.println("POST /attend/device HTTP/1.1");
         client.println("Host: emperorchang.store:8888");
         client.println("Content-Type: application/x-www-form-urlencoded");
         client.print("Content-Length: ");
@@ -99,6 +100,17 @@ void loop() {
       }
       else
        Serial.println("failed");
+    }
+    else {
+      nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, response, &responseLength);
+      Serial.println("");
+      Serial.println(responseLength);
+      Serial.print("Card Tag ID: ");
+      for (uint8_t i = 0; i < responseLength; i++) {
+        Serial.print(" 0x");
+        Serial.print(response[i], HEX);
+      }
+      Serial.println("");
     }
   }
   delay(1000);
