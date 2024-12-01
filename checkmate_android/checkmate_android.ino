@@ -1,6 +1,7 @@
 #include <SPI.h>
 #include <Ethernet.h>
 #include <string.h>
+#include <ctype.h>
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
@@ -27,8 +28,8 @@ Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial) {
-  }
+  // while (!Serial) {
+  // }
  EthernetInit();
  nfcInit();
 }
@@ -79,13 +80,28 @@ void loop() {
     uint8_t response[32];  
      
     success = nfc.inDataExchange(selectApdu, sizeof(selectApdu), response, &responseLength);
-    
+    String deviceToken = "";
     if(success) {
-      
-      nfc.PrintHexChar(response, responseLength);
-
-      if(client.connect(server, 8888)) {
-        String postData = "deviceToken=" + responseToString(response, responseLength);
+      // nfc.PrintHexChar(response, responseLength);
+      deviceToken = responseToString(response, responseLength);
+    }
+    else {
+      nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, response, &responseLength);
+      // Serial.println("");
+      // Serial.println(responseLength);
+      // Serial.print("Card Tag ID: ");
+      String respBuffer = "";
+      for (uint8_t i = 0; i < responseLength; i++) {
+        respBuffer += String(response[i], HEX);
+      }
+      for (uint8_t i = 0; i < respBuffer.length(); i++) {
+        respBuffer[i] = toupper(respBuffer[i]);
+      }
+      deviceToken = respBuffer;
+    }
+    Serial.println(deviceToken);
+    if(client.connect(server, 8888)) {
+        String postData = "deviceToken=" + deviceToken;
         postData += "&attendance=1&embededKey=F706357390D5798F";
         Serial.println(postData);
         client.println("POST /attend/device HTTP/1.1");
@@ -100,18 +116,6 @@ void loop() {
       }
       else
        Serial.println("failed");
-    }
-    else {
-      nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, response, &responseLength);
-      Serial.println("");
-      Serial.println(responseLength);
-      Serial.print("Card Tag ID: ");
-      for (uint8_t i = 0; i < responseLength; i++) {
-        Serial.print(" 0x");
-        Serial.print(response[i], HEX);
-      }
-      Serial.println("");
-    }
   }
   delay(1000);
 }
